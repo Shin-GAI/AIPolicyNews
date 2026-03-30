@@ -1,0 +1,52 @@
+name: 📬 AI 브리핑 텔레그램 자동 발송
+
+on:
+  # 매일 오전 7시 KST (UTC 22:00 전날)
+  schedule:
+    - cron: "0 22 * * *"
+
+  # 수동 실행 (테스트용)
+  workflow_dispatch:
+    inputs:
+      send_message:
+        description: "실제 텔레그램 발송 여부"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 🐍 Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 📰 브리핑 생성 & 텔레그램 발송
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID:  ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          SEND_MESSAGE: ${{ github.event_name == 'schedule' && 'true' || inputs.send_message }}
+        run: python main.py
+
+      - name: 📎 미리보기 텍스트 업로드 (디버그용)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: briefing-preview-${{ github.run_id }}
+          path: output_preview.txt
+          retention-days: 7

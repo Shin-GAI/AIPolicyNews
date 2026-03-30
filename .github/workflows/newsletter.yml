@@ -41,7 +41,8 @@ jobs:
           TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID:  ${{ secrets.TELEGRAM_CHANNEL_ID }}
           SEND_MESSAGE: ${{ github.event_name == 'schedule' && 'true' || inputs.send_message }}
-        run: python main.py
+          PYTHONPATH: ${{ github.workspace }}
+        run: python ${{ github.workspace }}/main.py
 
       - name: 📎 미리보기 텍스트 업로드 (디버그용)
         if: always()

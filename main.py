@@ -5,37 +5,38 @@ AI 뉴스레터 자동 발행 스크립트 — 텔레그램 채널 버전
 
 import os
 import datetime
-import anthropic
+import google.generativeai as genai
 from prompts import CATEGORIES, build_system_prompt, build_user_prompt
 from telegram_sender import send_daily_briefing
 
 # ── 환경변수 ───────────────────────────────────────────────
-ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
-SEND_MESSAGE      = os.environ.get("SEND_MESSAGE", "true").lower() == "true"
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+SEND_MESSAGE   = os.environ.get("SEND_MESSAGE", "true").lower() == "true"
 
-anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel(
+    model_name="gemini-2.0-flash",
+    system_instruction=build_system_prompt(),
+)
 
 
-
-# ── 1. Claude로 뉴스 브리핑 생성 ──────────────────────────
+# ── 1. Gemini로 뉴스 브리핑 생성 ──────────────────────────
 def generate_briefing() -> dict:
-    """카테고리별 뉴스 브리핑을 Claude로 생성합니다."""
+    """카테고리별 뉴스 브리핑을 Gemini로 생성합니다."""
     today = datetime.date.today().strftime("%Y년 %m월 %d일")
     briefings = {}
 
     for category_id, category_name in CATEGORIES.items():
         print(f"  [{category_name}] 브리핑 생성 중...")
-        response = anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1500,
-            system=build_system_prompt(),
-            messages=[
-                {"role": "user", "content": build_user_prompt(category_name, today)}
-            ],
+        response = model.generate_content(
+            build_user_prompt(category_name, today),
+            generation_config=genai.types.GenerationConfig(
+                max_output_tokens=1500,
+            ),
         )
         briefings[category_id] = {
             "name":    category_name,
-            "content": response.content[0].text,
+            "content": response.text,
         }
 
     return briefings
@@ -64,7 +65,7 @@ def main():
     print(f"\n=== AI 텔레그램 브리핑 시작: {today} ===\n")
 
     # 1. 브리핑 생성
-    print("[1/3] Claude로 카테고리별 브리핑 생성 중...")
+    print("[1/3] Gemini로 카테고리별 브리핑 생성 중...")
     briefings = generate_briefing()
 
     # 2. 미리보기 저장

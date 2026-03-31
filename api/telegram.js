@@ -4,9 +4,12 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  // 토큰 검증 (간단한 Bearer 확인)
+  // 토큰 검증 — auth.js와 동일한 방식으로 비교
   const auth = req.headers.authorization || ''
-  if (!auth.startsWith('Bearer ')) return res.status(401).json({ ok: false, error: 'Unauthorized' })
+  const expectedToken = Buffer.from(process.env.APP_PASSWORD || '').toString('base64')
+  if (!auth.startsWith('Bearer ') || auth.slice(7) !== expectedToken) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' })
+  }
 
   const { html, title } = req.body
   if (!html) return res.status(400).json({ ok: false, error: 'HTML required' })

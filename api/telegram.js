@@ -51,19 +51,20 @@ function htmlToTelegram(html, title) {
 
   // 간단한 정규식 파싱 (서버 환경 - DOMParser 없음)
   const stripTags = s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-  const lines = [`<b>🗞 ${title}</b>\n${today}\n`]
+  const escapeHtml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const lines = [`<b>🗞 ${escapeHtml(title)}</b>\n${today}\n`]
 
   // card-title 추출
   const titleMatches = html.matchAll(/class="card-title"[^>]*>([\s\S]*?)<\/div>/g)
   for (const m of titleMatches) {
-    const t = stripTags(m[1]).trim()
+    const t = escapeHtml(stripTags(m[1]).trim())
     if (t) lines.push(`\n<b>${t}</b>`)
   }
 
   // card-body 추출
   const bodyMatches = html.matchAll(/class="card-body"[^>]*>([\s\S]*?)<\/div>/g)
   for (const m of bodyMatches) {
-    const t = stripTags(m[1]).trim()
+    const t = escapeHtml(stripTags(m[1]).trim())
     if (t && t.length > 20) lines.push(t)
   }
 

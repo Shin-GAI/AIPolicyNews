@@ -1,70 +1,61 @@
-# 📬 AI 브리핑 텔레그램 자동 발송
+# AI 브리핑 발행 웹앱 (Vercel 버전)
 
-Claude API + 텔레그램 Bot + GitHub Actions으로 매일 오전 7시 AI 브리핑을 텔레그램 채널에 자동 발송합니다.
+비밀번호로 보호된 AI 브리핑 발행 도구.
+어떤 기기에서도 비밀번호 하나로 접속 가능.
 
-## 📁 파일 구조
+## 파일 구조
 
 ```
-ai-newsletter-telegram/
-├── main.py              # 메인 실행 스크립트
-├── prompts.py           # 카테고리 정의 & 프롬프트 템플릿
-├── telegram_sender.py   # 텔레그램 Bot API 발송 모듈
-├── requirements.txt
-├── .env.example
-└── .github/workflows/newsletter.yml
+ai-publisher-vercel/
+├── index.html        ← 프론트엔드 (로그인 + 발행 UI)
+├── api/
+│   ├── auth.js       ← 비밀번호 검증
+│   ├── telegram.js   ← 텔레그램 발송
+│   └── ghost.js      ← Ghost 발행
+├── vercel.json       ← Vercel 설정
+└── README.md
 ```
 
-## ⚡ 세팅 순서
+## Vercel 배포 순서
 
-### 1단계 — 텔레그램 봇 & 채널 설정
+### 1단계 — Vercel 가입 & 배포
 
-**봇 만들기:**
-1. 텔레그램 → `@BotFather` 검색 → `/newbot`
-2. 이름/username 설정 → **Bot Token** 저장
+1. vercel.com 접속 → GitHub으로 로그인
+2. "Add New Project" → 이 폴더를 GitHub에 올린 저장소 선택
+3. "Deploy" 클릭 → 배포 완료
 
-**채널 만들기:**
-1. 텔레그램 → 새 채널 생성
-2. 채널 설정 → 관리자 → 봇 추가 (메시지 게시 권한 체크)
+### 2단계 — 환경변수 설정
 
-### 2단계 — GitHub Secrets 3개 추가
+Vercel 대시보드 → 프로젝트 → **Settings → Environment Variables**
 
-Settings → Secrets and variables → Actions:
+| 변수명 | 값 | 설명 |
+|---|---|---|
+| `APP_PASSWORD` | 원하는 비밀번호 | 웹앱 로그인 비밀번호 |
+| `TG_BOT_TOKEN` | 1234567890:ABC... | 텔레그램 봇 토큰 |
+| `TG_CHANNEL_ID` | @my_channel | 텔레그램 채널 ID |
+| `GHOST_URL` | https://myblog.ghost.io | Ghost 블로그 URL |
+| `GHOST_ADMIN_KEY` | id:secret | Ghost Admin API Key |
 
-| Secret | 값 |
-|---|---|
-| `ANTHROPIC_API_KEY` | console.anthropic.com |
-| `TELEGRAM_BOT_TOKEN` | BotFather 토큰 |
-| `TELEGRAM_CHANNEL_ID` | `@채널username` |
+> Ghost를 사용하지 않으면 GHOST_URL, GHOST_ADMIN_KEY는 생략 가능
 
-### 3단계 — 로컬 테스트
+### 3단계 — 재배포
 
-```bash
-pip install -r requirements.txt
-cp .env.example .env   # 실제 값으로 수정
-SEND_MESSAGE=false python main.py
-cat output_preview.txt
-```
+환경변수 저장 후 Vercel에서 **Redeploy** 클릭
 
-### 4단계 — GitHub Actions 수동 실행
+### 4단계 — 사용
 
-Actions → Run workflow → `send_message: true` 로 실제 발송 확인
+배포된 URL로 접속 → 비밀번호 입력 → 발행 시작!
 
-## 💰 비용
+## 사용법
 
-| 항목 | 비용 |
-|---|---|
-| GitHub Actions | 무료 |
-| Claude API | 월 $3~5 |
-| 텔레그램 | **완전 무료, 구독자 무제한** |
+1. Claude에서 "오늘 AI 핫뉴스 카드뉴스 HTML로 만들어줘" 요청
+2. Claude가 생성한 HTML 복사
+3. 발행 웹앱 접속 → HTML 붙여넣기
+4. 미리보기 확인
+5. 발행하기 버튼 → 텔레그램 + Ghost 동시 배포
 
-## 🗂️ 카테고리 추가
+## 보안
 
-`prompts.py` 의 `CATEGORIES` 에 한 줄 추가 후
-`telegram_sender.py` 의 `CATEGORY_EMOJI` 에 이모지 추가.
-
-## 🕐 발송 시간 변경
-
-`newsletter.yml` cron 수정:
-- 오전 7시 KST: `"0 22 * * *"`
-- 오전 8시 KST: `"0 23 * * *"`
-- 평일만: `"0 22 * * 1-5"`
+- API 키는 Vercel 서버에만 저장 (브라우저에 노출 없음)
+- 비밀번호는 세션 동안만 유지 (브라우저 닫으면 자동 로그아웃)
+- 모든 API 요청은 서버를 통해 처리

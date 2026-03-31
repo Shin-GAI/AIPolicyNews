@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>AI 브리핑 발행</title>
+  <style>
+    :root {
+      --bg: #0f0f0e;
+      --surface: #1a1a18;
+      --surface2: #242422;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.18);
+      --text: #e8e6df;
+      --text-muted: #888780;
+      --text-dim: #4a4a47;
+      --accent: #4f7fff;
+      --accent-hover: #6b93ff;
+      --green: #3dba7e;
+      --green-bg: rgba(61,186,126,0.12);
+      --red: #e24b4a;
+      --red-bg: rgba(226,75,74,0.12);
+      --amber: #f0a429;
+      --amber-bg: rgba(240,164,41,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── 로그인 화면 ── */
+    #login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 360px;
+    }
+    .login-icon {
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .login-title {
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+    .login-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .pw-field {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      transition: border-color .15s;
+    }
+    .pw-field:focus-within { border-color: var(--accent); }
+    .pw-field.error { border-color: var(--red); }
+    .pw-field input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 17px;
+      font-family: inherit;
+      letter-spacing: .1em;
+    }
+    .pw-field input::placeholder { color: var(--text-dim); letter-spacing: 0; }
+    .pw-toggle {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 2px;
+    }
+    .login-error {
+      font-size: 13px;
+      color: var(--red);
+      text-align: center;
+      margin-bottom: 12px;
+      min-height: 18px;
+    }
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s, transform .1s;
+    }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:hover { background: var(--accent-hover); }
+    .btn-login:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+
+    /* ── 메인 앱 ── */
+    #app-screen { display: none; padding-bottom: 110px; }
+
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,15,14,0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-left .title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    .header-left .date  { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .btn-logout {
+      font-size: 13px; color: var(--text-muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 14px;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* 스텝 */
+    .steps { display: flex; padding: 20px 20px 0; }
+    .step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+    .step::after { content:''; position:absolute; top:17px; left:50%; width:100%; height:1px; background:var(--border); }
+    .step:last-child::after { display:none; }
+    .step-dot {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600; color: var(--text-muted);
+      position: relative; z-index: 1; transition: all .2s;
+    }
+    .step.active .step-dot { border-color: var(--accent); color: var(--accent); background: rgba(79,127,255,0.12); }
+    .step.done   .step-dot { border-color: var(--green);  color: var(--green);  background: var(--green-bg); }
+    .step.done::after { background: var(--green); opacity: .3; }
+    .step-label { font-size: 12px; color: var(--text-dim); text-align: center; line-height: 1.3; }
+    .step.active .step-label, .step.done .step-label { color: var(--text-muted); }
+
+    /* 섹션 */
+    .section { padding: 20px 20px 0; }
+    .section-label { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+
+    /* 입력 */
+    .input-area {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
+    }
+    .input-area:focus-within { border-color: var(--border-hover); }
+    .input-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .char-count { font-size: 13px; color: var(--text-dim); }
+    textarea {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-size: 15px; line-height: 1.6;
+      resize: none; font-family: inherit; min-height: 160px;
+    }
+    textarea::placeholder { color: var(--text-dim); }
+
+    /* 미리보기 */
+    .preview-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+    .preview-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .preview-title { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+    .preview-btn { font-size: 13px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); }
+    .preview-frame { width: 100%; min-height: 300px; border: none; background: #fff; display: none; }
+    .preview-placeholder { padding: 40px 20px; text-align: center; color: var(--text-dim); font-size: 14px; line-height: 1.7; }
+
+    /* 채널 카드 */
+    .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+    .config-row { display: flex; align-items: center; padding: 16px; gap: 12px; border-bottom: 1px solid var(--border); }
+    .config-row:last-child { border-bottom: none; }
+    .config-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .icon-tg    { background: rgba(41,173,221,0.15); }
+    .icon-ghost { background: rgba(255,255,255,0.06); }
+    .config-info { flex: 1; min-width: 0; }
+    .config-name { font-size: 16px; font-weight: 500; margin-bottom: 2px; }
+    .config-val  { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .config-toggle { width: 48px; height: 28px; border-radius: 14px; background: var(--surface2); border: 1.5px solid var(--border); position: relative; cursor: pointer; transition: background .2s, border-color .2s; flex-shrink: 0; }
+    .config-toggle.on { background: var(--accent); border-color: var(--accent); }
+    .config-toggle::after { content:''; position:absolute; top:4px; left:4px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .2s; }
+    .config-toggle.on::after { transform: translateX(20px); }
+
+    /* 상태 배지 */
+    .status-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .status-badge { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; font-size: 14px; font-weight: 500; border: 1px solid transparent; }
+    .badge-idle    { background: var(--surface2);    color: var(--text-muted); border-color: var(--border); }
+    .badge-sending { background: var(--amber-bg);    color: var(--amber); border-color: rgba(240,164,41,.2); }
+    .badge-done    { background: var(--green-bg);    color: var(--green); border-color: rgba(61,186,126,.2); }
+    .badge-error   { background: var(--red-bg);      color: var(--red);   border-color: rgba(226,75,74,.2); }
+    .dot-pulse { width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* 발행 바 */
+    .publish-bar { position: fixed; bottom:0; left:0; right:0; padding: 16px 20px; background: rgba(15,15,14,0.95); backdrop-filter: blur(16px); border-top: 1px solid var(--border); display: flex; gap: 10px; }
+    .btn { flex:1; padding:16px; border-radius:var(--radius); border:none; font-size:17px; font-weight:600; cursor:pointer; transition:all .15s; font-family:inherit; }
+    .btn:active { transform: scale(0.97); }
+    .btn-sub { background:var(--surface2); color:var(--text-muted); border:1px solid var(--border); flex:0 0 auto; padding:16px 20px; font-size:15px; }
+    .btn-pub { background:var(--accent); color:#fff; }
+    .btn-pub:hover { background:var(--accent-hover); }
+    .btn-pub:disabled { background:var(--surface2); color:var(--text-dim); cursor:not-allowed; }
+
+    /* 토스트 */
+    .toast { position:fixed; top:70px; left:50%; transform:translateX(-50%) translateY(-10px); background:var(--surface); border:1px solid var(--border-hover); color:var(--text); padding:12px 22px; border-radius:20px; font-size:15px; font-weight:500; opacity:0; transition:all .25s; pointer-events:none; white-space:nowrap; z-index:300; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ── 로그인 화면 ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🗞</div>
+    <div class="login-title">AI 브리핑 발행</div>
+    <div class="login-sub">비밀번호를 입력하세요</div>
+    <div class="pw-field" id="pw-field">
+      <input type="password" id="pw-input" placeholder="비밀번호"
+        onkeydown="if(event.key==='Enter')login()"
+        oninput="document.getElementById('login-error').textContent=''">
+      <button class="pw-toggle" onclick="togglePw()" id="pw-eye">👁</button>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="btn-login" onclick="login()" id="login-btn">입장하기</button>
+  </div>
+</div>
+
+<!-- ── 메인 앱 ── -->
+<div id="app-screen">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="title">AI 브리핑 발행</div>
+      <div class="date" id="today-date"></div>
+    </div>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+
+  <!-- 스텝 -->
+  <div class="steps">
+    <div class="step done" id="step1"><div class="step-dot">✓</div><div class="step-label">Claude<br>브리핑</div></div>
+    <div class="step active" id="step2"><div class="step-dot">2</div><div class="step-label">HTML<br>붙여넣기</div></div>
+    <div class="step" id="step3"><div class="step-dot">3</div><div class="step-label">미리보기<br>확인</div></div>
+    <div class="step" id="step4"><div class="step-dot">4</div><div class="step-label">발행<br>완료</div></div>
+  </div>
+
+  <!-- HTML 입력 -->
+  <div class="section" style="margin-top:20px;">
+    <div class="section-label">카드뉴스 HTML</div>
+    <div class="input-area">
+      <div class="input-label">
+        <span>Claude가 생성한 HTML을 붙여넣으세요</span>
+        <span class="char-count" id="char-count">0자</span>
+      </div>
+      <textarea id="html-input" placeholder="<!-- Claude에서 복사한 HTML 코드 -->" oninput="onHtmlInput(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- 미리보기 -->
+  <div class="section">
+    <div class="section-label">미리보기</div>
+    <div class="preview-wrap">
+      <div class="preview-toolbar">
+        <span class="preview-title">렌더링 미리보기</span>
+        <button class="preview-btn" onclick="refreshPreview()">🔄 새로고침</button>
+      </div>
+      <div id="preview-placeholder" class="preview-placeholder">HTML을 붙여넣으면<br>여기에 미리보기가 표시됩니다</div>
+      <iframe id="preview-frame" class="preview-frame"></iframe>
+    </div>
+  </div>
+
+  <!-- 배포 채널 -->
+  <div class="section">
+    <div class="section-label">배포 채널</div>
+    <div class="config-card">
+      <div class="config-row">
+        <div class="config-icon icon-tg">📨</div>
+        <div class="config-info">
+          <div class="config-name">텔레그램 채널</div>
+          <div class="config-val" id="tg-display">서버 환경변수로 설정됨</div>
+        </div>
+        <div class="config-toggle on" id="tg-toggle" onclick="toggleCh('tg')"></div>
+      </div>
+      <div class="config-row">
+        <div class="config-icon icon-ghost">👻</div>
+        <div class="config-info">
+          <div class="config-name">Ghost 블로그</div>
+          <div class="config-val" id="ghost-display">서버 환경변수로 설정됨</div>
+        </div>
+        <div class="config-toggle" id="ghost-toggle" onclick="toggleCh('ghost')"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 발행 상태 -->
+  <div class="section" id="status-section" style="display:none;">
+    <div class="section-label">발행 상태</div>
+    <div class="status-row" id="status-row"></div>
+  </div>
+
+</div><!-- /app-screen -->
+
+<!-- 발행 바 (앱 내) -->
+<div class="publish-bar" id="publish-bar" style="display:none;">
+  <button class="btn btn-sub" onclick="clearAll()">🗑 초기화</button>
+  <button class="btn btn-pub" id="publish-btn" onclick="publish()" disabled>발행하기</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id)
+
+// ── 로그인 ──────────────────────────────────────────
+async function login() {
+  const pw = $('pw-input').value.trim()
+  if (!pw) return
+  $('login-btn').disabled = true
+  $('login-btn').textContent = '확인 중...'
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    })
+    const data = await res.json()
+    if (data.ok) {
+      sessionStorage.setItem('auth_token', data.token)
+      sessionStorage.setItem('tg_channel', data.tgChannel || '')
+      sessionStorage.setItem('ghost_url', data.ghostUrl || '')
+      showApp()
+    } else {
+      $('pw-field').classList.add('error')
+      $('login-error').textContent = '비밀번호가 올바르지 않습니다'
+      setTimeout(() => $('pw-field').classList.remove('error'), 1500)
+    }
+  } catch(e) {
+    $('login-error').textContent = '서버 연결 실패'
+  }
+  $('login-btn').disabled = false
+  $('login-btn').textContent = '입장하기'
+}
+
+function logout() {
+  sessionStorage.clear()
+  $('login-screen').style.display = 'flex'
+  $('app-screen').style.display = 'none'
+  $('publish-bar').style.display = 'none'
+  $('pw-input').value = ''
+}
+
+function togglePw() {
+  const inp = $('pw-input')
+  inp.type = inp.type === 'password' ? 'text' : 'password'
+}
+
+// ── 앱 진입 ──────────────────────────────────────────
+function showApp() {
+  $('login-screen').style.display = 'none'
+  $('app-screen').style.display = 'block'
+  $('publish-bar').style.display = 'flex'
+  $('today-date').textContent = new Date().toLocaleDateString('ko-KR', {
+    year:'numeric', month:'long', day:'numeric', weekday:'short'
+  })
+  const tgCh = sessionStorage.getItem('tg_channel')
+  const ghostUrl = sessionStorage.getItem('ghost_url')
+  if (tgCh) $('tg-display').textContent = tgCh
+  if (ghostUrl) $('ghost-display').textContent = ghostUrl.replace('https://','')
+}
+
+// 새로고침 후에도 세션 유지
+window.addEventListener('load', () => {
+  if (sessionStorage.getItem('auth_token')) showApp()
+})
+
+// ── 토글 ──────────────────────────────────────────────
+function toggleCh(ch) { $(`${ch}-toggle`).classList.toggle('on') }
+
+// ── HTML 입력 ──────────────────────────────────────────
+function onHtmlInput(el) {
+  const len = el.value.length
+  $('char-count').textContent = len.toLocaleString() + '자'
+  const ok = len > 50
+  $('publish-btn').disabled = !ok
+  if (ok) { setStep(3); refreshPreview() }
+  else setStep(2)
+}
+
+function refreshPreview() {
+  const html = $('html-input').value.trim()
+  if (!html) return
+  const frame = $('preview-frame')
+  frame.style.display = 'block'
+  $('preview-placeholder').style.display = 'none'
+  frame.srcdoc = html
+  frame.onload = () => {
+    try { frame.style.height = Math.max(300, frame.contentDocument.documentElement.scrollHeight) + 'px' } catch(e){}
+  }
+}
+
+// ── 스텝 ──────────────────────────────────────────────
+function setStep(n) {
+  for (let i=1; i<=4; i++) {
+    const el = $('step'+i)
+    el.className = 'step'
+    if (i < n) el.classList.add('done')
+    else if (i === n) el.classList.add('active')
+    el.querySelector('.step-dot').textContent = i < n ? '✓' : i
+  }
+}
+
+// ── 발행 ──────────────────────────────────────────────
+async function publish() {
+  const html = $('html-input').value.trim()
+  if (!html) return toast('❗ HTML을 먼저 붙여넣어 주세요')
+  const sendTg    = $('tg-toggle').classList.contains('on')
+  const sendGhost = $('ghost-toggle').classList.contains('on')
+  if (!sendTg && !sendGhost) return toast('❗ 배포 채널을 하나 이상 켜주세요')
+
+  $('publish-btn').disabled = true
+  $('publish-btn').textContent = '발행 중...'
+  $('status-section').style.display = 'block'
+  $('status-row').innerHTML = ''
+
+  const token = sessionStorage.getItem('auth_token')
+  const today = new Date().toLocaleDateString('ko-KR', { month:'long', day:'numeric' })
+  const title = `AI 브리핑 | ${today}`
+  let allOk = true
+
+  if (sendTg) {
+    addStatus('tg', 'sending', '📨 텔레그램 발송 중...')
+    const res = await fetch('/api/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ html, title })
+    })
+    const ok = res.ok && (await res.json()).ok
+    updateStatus('tg', ok ? 'done' : 'error', ok ? '📨 텔레그램 발송 완료' : '📨 텔레그램 발송 실패')
+    if (!ok) allOk = false
+  }
+
+  if (sendGhost) {
+    addStatus('ghost', 'sending', '👻 Ghost 발행 중...')
+    const res = await fetch('/api/ghost', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ html, title })
+    })
+    const ok = res.ok && (await res.json()).ok
+    updateStatus('ghost', ok ? 'done' : 'error', ok ? '👻 Ghost 발행 완료' : '👻 Ghost 발행 실패')
+    if (!ok) allOk = false
+  }
+
+  if (allOk) {
+    setStep(4)
+    toast('🎉 발행이 완료되었습니다!')
+    $('publish-btn').textContent = '✅ 발행 완료'
+  } else {
+    toast('⚠️ 일부 채널에서 실패했습니다')
+    $('publish-btn').disabled = false
+    $('publish-btn').textContent = '다시 시도'
+  }
+}
+
+// ── 상태 ──────────────────────────────────────────────
+function addStatus(id, type, msg) {
+  const el = document.createElement('div')
+  el.id = 'st-' + id
+  el.className = `status-badge badge-${type}`
+  el.innerHTML = `<span class="dot-pulse"></span> ${msg}`
+  $('status-row').appendChild(el)
+}
+function updateStatus(id, type, msg) {
+  const el = $('st-' + id)
+  if (!el) return
+  el.className = `status-badge badge-${type}`
+  el.innerHTML = msg
+}
+
+function clearAll() {
+  if (!confirm('초기화하시겠습니까?')) return
+  $('html-input').value = ''
+  $('char-count').textContent = '0자'
+  $('preview-frame').style.display = 'none'
+  $('preview-placeholder').style.display = 'block'
+  $('publish-btn').disabled = true
+  $('publish-btn').textContent = '발행하기'
+  $('status-section').style.display = 'none'
+  setStep(2)
+}
+
+function toast(msg) {
+  const el = $('toast')
+  el.textContent = msg
+  el.classList.add('show')
+  setTimeout(() => el.classList.remove('show'), 2500)
+}
+</script>
+</body>
+</html>

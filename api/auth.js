@@ -1,5 +1,5 @@
 // api/auth.js — 비밀번호 검증 엔드포인트
-// 환경변수: APP_PASSWORD, TG_CHANNEL_ID, GHOST_URL, TISTORY_BLOG_NAME
+// 환경변수: APP_PASSWORD, TG_CHANNEL_ID, GHOST_URL
 
 export default function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -17,8 +17,7 @@ export default function handler(req, res) {
   return res.status(200).json({
     ok: true,
     token,
-    tgChannel:    process.env.TG_CHANNEL_ID    || '',
-    ghostUrl:     process.env.GHOST_URL        || '',
-    tistoryBlog:  process.env.TISTORY_BLOG_NAME || '',
+    tgChannel: process.env.TG_CHANNEL_ID || '',
+    ghostUrl:  process.env.GHOST_URL     || '',
   })
 }

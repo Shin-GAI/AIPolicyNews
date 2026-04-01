@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, error: 'Unauthorized' })
   }
 
-  const { html, title } = req.body
+  const { html, title } = req.body ?? {}
   if (!html) return res.status(400).json({ ok: false, error: 'HTML required' })
 
   const ghostUrl  = process.env.GHOST_URL?.replace(/\/$/, '')
@@ -42,7 +42,8 @@ export default async function handler(req, res) {
     })
 
     const ghostData = await ghostRes.json().catch(() => null)
-    return res.status(200).json({ ok: ghostRes.ok, status: ghostRes.status, detail: ghostData })
+    const postUrl = ghostData?.posts?.[0]?.url || null
+    return res.status(200).json({ ok: ghostRes.ok, status: ghostRes.status, url: postUrl, detail: ghostData })
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message })
   }

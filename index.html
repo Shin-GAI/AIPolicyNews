@@ -448,19 +448,9 @@ async function publish() {
   const today = new Date().toLocaleDateString('ko-KR', { month:'long', day:'numeric' })
   const title = `AI 브리핑 | ${today}`
   let allOk = true
+  let ghostPostUrl = null
 
-  if (sendTg) {
-    addStatus('tg', 'sending', '📨 텔레그램 발송 중...')
-    const res = await fetch('/api/telegram', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ html, title })
-    })
-    const ok = res.ok && (await res.json()).ok
-    updateStatus('tg', ok ? 'done' : 'error', ok ? '📨 텔레그램 발송 완료' : '📨 텔레그램 발송 실패')
-    if (!ok) allOk = false
-  }
-
+  // Ghost 먼저 발행 → URL 확보 후 Telegram에 전달
   if (sendGhost) {
     addStatus('ghost', 'sending', '👻 Ghost 발행 중...')
     const res = await fetch('/api/ghost', {
@@ -468,8 +458,22 @@ async function publish() {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ html, title })
     })
-    const ok = res.ok && (await res.json()).ok
+    const data = await res.json()
+    const ok = res.ok && data.ok
+    ghostPostUrl = data.url || null
     updateStatus('ghost', ok ? 'done' : 'error', ok ? '👻 Ghost 발행 완료' : '👻 Ghost 발행 실패')
+    if (!ok) allOk = false
+  }
+
+  if (sendTg) {
+    addStatus('tg', 'sending', '📨 텔레그램 발송 중...')
+    const res = await fetch('/api/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ html, title, postUrl: ghostPostUrl })
+    })
+    const ok = res.ok && (await res.json()).ok
+    updateStatus('tg', ok ? 'done' : 'error', ok ? '📨 텔레그램 발송 완료' : '📨 텔레그램 발송 실패')
     if (!ok) allOk = false
   }
 

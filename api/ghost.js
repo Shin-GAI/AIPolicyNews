@@ -41,7 +41,8 @@ export default async function handler(req, res) {
       })
     })
 
-    return res.status(200).json({ ok: ghostRes.ok, status: ghostRes.status })
+    const ghostData = await ghostRes.json().catch(() => null)
+    return res.status(200).json({ ok: ghostRes.ok, status: ghostRes.status, detail: ghostData })
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message })
   }

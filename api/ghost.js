@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, error: 'Unauthorized' })
   }
 
-  const { html, title } = req.body
+  const { html, title } = req.body ?? {}
   if (!html) return res.status(400).json({ ok: false, error: 'HTML required' })
 
   const ghostUrl  = process.env.GHOST_URL?.replace(/\/$/, '')

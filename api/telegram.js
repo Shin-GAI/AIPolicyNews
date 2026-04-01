@@ -49,23 +49,29 @@ function htmlToTelegram(html, title) {
     month: 'long', day: 'numeric', weekday: 'short'
   })
 
-  // 간단한 정규식 파싱 (서버 환경 - DOMParser 없음)
-  const stripTags = s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
   const escapeHtml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const lines = [`<b>🗞 ${escapeHtml(title)}</b>\n${today}\n`]
+  const stripTags = s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  const lines = [`<b>🗞 ${escapeHtml(title)}</b>\n${today}`]
 
-  // card-title 추출
-  const titleMatches = html.matchAll(/class="card-title"[^>]*>([\s\S]*?)<\/div>/g)
-  for (const m of titleMatches) {
+  // 헤드라인 추출: card-title (복합 클래스 대응, h1~h6·div·p 닫힘 태그 모두 대응)
+  for (const m of html.matchAll(/class="[^"]*card-title[^"]*"[^>]*>([\s\S]*?)<\/\w+>/g)) {
     const t = escapeHtml(stripTags(m[1]).trim())
     if (t) lines.push(`\n<b>${t}</b>`)
   }
 
-  // card-body 추출
-  const bodyMatches = html.matchAll(/class="card-body"[^>]*>([\s\S]*?)<\/div>/g)
-  for (const m of bodyMatches) {
-    const t = escapeHtml(stripTags(m[1]).trim())
-    if (t && t.length > 20) lines.push(t)
+  // 외부 링크 수집 (중복 제거, 텍스트 있는 것만)
+  const seen = new Set()
+  const sourceLinks = []
+  for (const m of html.matchAll(/<a\s[^>]*href="(https?:\/\/[^"#]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const url = m[1]
+    const text = stripTags(m[2]).trim()
+    if (text.length > 1 && !seen.has(url)) {
+      seen.add(url)
+      sourceLinks.push(`<a href="${url}">${escapeHtml(text)}</a>`)
+    }
+  }
+  if (sourceLinks.length > 0) {
+    lines.push(`\n🔗 ${sourceLinks.slice(0, 15).join(' · ')}`)
   }
 
   return lines.join('\n').substring(0, 4000)

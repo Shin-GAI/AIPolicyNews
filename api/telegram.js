@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, error: 'Unauthorized' })
   }
 
-  const { html, title } = req.body ?? {}
+  const { html, title, postUrl } = req.body ?? {}
   if (!html) return res.status(400).json({ ok: false, error: 'HTML required' })
 
   const botToken   = process.env.TG_BOT_TOKEN
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const text = htmlToTelegram(html, title)
+    const text = htmlToTelegram(html, title, postUrl)
     const apiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`
 
     const tgRes = await fetch(apiUrl, {
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
   }
 }
 
-function htmlToTelegram(html, title) {
+function htmlToTelegram(html, title, postUrl) {
   // HTML 파싱해서 텔레그램 텍스트로 변환
   const today = new Date().toLocaleDateString('ko-KR', {
     month: 'long', day: 'numeric', weekday: 'short'
@@ -72,6 +72,10 @@ function htmlToTelegram(html, title) {
   }
   if (sourceLinks.length > 0) {
     lines.push(`\n🔗 ${sourceLinks.slice(0, 15).join(' · ')}`)
+  }
+
+  if (postUrl) {
+    lines.push(`\n📖 <a href="${postUrl}">전체 카드뉴스 보기</a>`)
   }
 
   return lines.join('\n').substring(0, 4000)
